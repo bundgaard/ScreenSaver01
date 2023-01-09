@@ -248,7 +248,7 @@ BOOL WINAPI ScreenSaverConfigureDialog(HWND hDlg, UINT msg, WPARAM wParam, LPARA
 	switch (msg)
 	{
 	case WM_INITDIALOG:
-		GetPrivateProfileIntA()
+		// Should write it to registry instead of using old 16 bit code.
 		return TRUE;
 	case WM_COMMAND:
 		
