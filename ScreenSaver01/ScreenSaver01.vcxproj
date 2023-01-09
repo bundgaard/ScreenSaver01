@@ -146,6 +146,7 @@
     <ClCompile Include="Application.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Image.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
