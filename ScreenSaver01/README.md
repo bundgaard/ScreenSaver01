@@ -1,0 +1,1 @@
+copy $(OutDirFullPath)$(TargetFileName) $(OutDirFullPath)%(Filename).scr
