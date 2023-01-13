@@ -93,6 +93,11 @@ LRESULT WINAPI ScreenSaverProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam
 				return FALSE;
 			}
 			const auto filename = reg.Filename();
+			if (filename.empty())
+			{
+				MessageBoxW(hwnd, L"Please configure the screen saver", L"Information", MB_OK | MB_ICONINFORMATION);
+				return FALSE;
+			}
 			g = std::make_unique<Scene::Graphic>(hwnd);
 			g->LoadBitmapW(filename);
 
@@ -163,8 +168,8 @@ BOOL WINAPI ScreenSaverConfigureDialog(HWND hwnd, UINT msg, WPARAM wParam, LPARA
 			if (!filename.empty())
 			{
 				OutputDebugStringW(filename.c_str());
+				g->LoadBitmapW(filename);
 			}
-			g->LoadBitmapW(filename);
 		}
 		return TRUE;
 	case WM_PAINT:
@@ -174,7 +179,10 @@ BOOL WINAPI ScreenSaverConfigureDialog(HWND hwnd, UINT msg, WPARAM wParam, LPARA
 				g->BeginDraw();
 				RECT rct;
 				GetClientRect(hwnd, &rct);
-				g->DrawBitmap(0.f, 0.f, Scene::Width<float>(rct), Scene::Height<float>(rct));
+				if (g->IsBitmapLoaded())
+				{
+					g->DrawBitmap(0.f, 0.f, Scene::Width<float>(rct), Scene::Height<float>(rct));
+				}
 
 				g->EndDraw();
 			}

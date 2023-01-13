@@ -186,6 +186,11 @@ namespace Scene
 			validate_result(hr, "failed to create bitmap from wic bitmap");
 		}
 
+		[[nodiscard]] auto IsBitmapLoaded() const -> bool
+		{
+			return pBitmap != nullptr;
+		}
+
 		auto DrawBitmap(float left, float top, float right, float bottom, float alpha = 1.0f) const
 		{
 			pDeviceContext->DrawBitmap(pBitmap.Get(), D2D1::RectF(left, top, right, bottom), alpha);
