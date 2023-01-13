@@ -61,9 +61,11 @@ constexpr wchar_t applicationProvider[] = L"Tretton63";
 static TCHAR szAppName[APPNAMEBUFFERLEN] = L"ScreenSaver01";
 
 static size_t i = 0;
-static FLOAT x, y, zz = 0.0f;
+static FLOAT x, y, zz = 0.1f;
 
 static Scene::Image* image = nullptr;
+static std::unique_ptr<Scene::Graphic> g = nullptr;
+static float dx = .01f;
 
 LRESULT WINAPI ScreenSaverProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
@@ -85,13 +87,14 @@ LRESULT WINAPI ScreenSaverProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam
 				return FALSE;
 			}
 			tretton63::Registry reg(applicationProvider);
-			if(!reg.IsHiveOpen())
+			if (!reg.IsHiveOpen())
 			{
 				MessageBox(hwnd, L"Please configure the screen saver", L"Not configured", MB_OK | MB_ICONERROR);
 				return FALSE;
 			}
-			auto filename = reg.Filename();
-			image = new Scene::Image(hwnd, filename); 
+			const auto filename = reg.Filename();
+			g = std::make_unique<Scene::Graphic>(hwnd);
+			g->LoadBitmapW(filename);
 
 			timerID = SetTimer(hwnd, 1, 25, nullptr);
 		}
@@ -100,11 +103,33 @@ LRESULT WINAPI ScreenSaverProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam
 		return TRUE;
 	case WM_TIMER:
 		{
-			image->Draw(x,y);
-			
-			x = 40 * sin(zz+0.75f* 75.0f);
-			y = 40 * cos(zz+0.75f* 75.f);
-			zz += 0.01f;
+			g->BeginDraw();
+			RECT rct;
+			GetClientRect(hwnd, &rct);
+			for (auto i = 1.0f; i < 10.0f; i++)
+			{
+				g->DrawBitmap(
+					i + x,
+					i + y,
+					Scene::Width<float>(rct) - (x * i),
+					Scene::Height<float>(rct) - (y * i),
+					(0.1f * i));
+			}
+
+
+			g->EndDraw();
+
+			x = 40 * sin(zz + 0.75f * 75.0f);
+			y = 40 * cos(zz + 0.75f * 75.f);
+			if (zz >= 1.0f)
+			{
+				dx = -.01f;
+			}
+			if (zz <= 0.0f)
+			{
+				dx = 0.01f;
+			}
+			zz += dx;
 		}
 		break;
 	case WM_DESTROY:
@@ -127,8 +152,10 @@ BOOL WINAPI ScreenSaverConfigureDialog(HWND hwnd, UINT msg, WPARAM wParam, LPARA
 	{
 	case WM_INITDIALOG:
 		{
+			CoInitialize(nullptr);
+			g = std::make_unique<Scene::Graphic>(hwnd);
 			tretton63::Registry reg(applicationProvider);
-			if(!reg.IsHiveOpen())
+			if (!reg.IsHiveOpen())
 			{
 				return FALSE;
 			}
@@ -137,8 +164,26 @@ BOOL WINAPI ScreenSaverConfigureDialog(HWND hwnd, UINT msg, WPARAM wParam, LPARA
 			{
 				OutputDebugStringW(filename.c_str());
 			}
+			g->LoadBitmapW(filename);
 		}
 		return TRUE;
+	case WM_PAINT:
+		{
+			try
+			{
+				g->BeginDraw();
+				RECT rct;
+				GetClientRect(hwnd, &rct);
+				g->DrawBitmap(0.f, 0.f, Scene::Width<float>(rct), Scene::Height<float>(rct));
+
+				g->EndDraw();
+			}
+			catch (...)
+			{
+				OutputDebugStringW(L"Failed to draw");
+			}
+		}
+		break;
 	case WM_COMMAND:
 
 		if (wParam == IDOK)
@@ -146,7 +191,7 @@ BOOL WINAPI ScreenSaverConfigureDialog(HWND hwnd, UINT msg, WPARAM wParam, LPARA
 			// Find image
 
 			tretton63::Registry reg(applicationProvider);
-			if(!reg.IsHiveOpen())
+			if (!reg.IsHiveOpen())
 			{
 				OutputDebugStringW(L"Registry is not open");
 				return FALSE;
@@ -165,8 +210,6 @@ BOOL WINAPI ScreenSaverConfigureDialog(HWND hwnd, UINT msg, WPARAM wParam, LPARA
 			ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
 
 
-
-			
 			if (!GetOpenFileNameW(&ofn))
 			{
 				OutputDebugStringW(L"failed to use openfile dialog\n");
@@ -180,6 +223,10 @@ BOOL WINAPI ScreenSaverConfigureDialog(HWND hwnd, UINT msg, WPARAM wParam, LPARA
 		{
 			EndDialog(hwnd, 0);
 		}
+		break;
+	case WM_DESTROY:
+		CoUninitialize();
+		PostQuitMessage(0);
 		break;
 	default:
 		return FALSE;
