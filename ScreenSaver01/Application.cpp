@@ -114,8 +114,8 @@ LRESULT WINAPI ScreenSaverProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam
 			for (auto i = 1.0f; i < 10.0f; i++)
 			{
 				g->DrawBitmap(
-					i + x,
-					i + y,
+					i + x*i,
+					i + y*i,
 					Scene::Width<float>(rct) - (x * i),
 					Scene::Height<float>(rct) - (y * i),
 					(0.1f * i));
